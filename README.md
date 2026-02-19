@@ -34,9 +34,10 @@ vh = VintHub()
 
 # Single Analysis
 result = vh.analyze("CVE-2023-23397")
-print(f"Score: {result['cvss_score']}, Decision: {result['ssvc_decision']}")
+print(f"Published: {result['Published']}, Score: {result['Score']}")
 
 # Batch analysis
 cve_list = ["CVE-2023-23397", "CVE-2021-44228"]
 results = vh.batch_analyze(cve_list, show_progress=True)
+print(results)
 ```
