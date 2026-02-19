@@ -1,4 +1,4 @@
-VintHub
+# VintHub #
 VintHub is a lightweight, python library and CLI tool designed to analyze Common Vulnerabilities and Exposures (CVEs). It replicates the exact logic used in https://vinthub.pages.dev, providing detailed insights into vulnerability metrics, PoCs, and SSVC decisions.
 
 Full features description available at: https://vinthub.pages.dev/about
