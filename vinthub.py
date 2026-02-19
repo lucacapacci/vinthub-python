@@ -92,7 +92,6 @@ class VintHub:
                             epss_val = f"{float(parts[1])*100:.3f}%"
                         break
 
-            # FIXED KEV LOGIC: Check row by row for CVE ID and return dateAdded or "No"
             kev_val = "No"
             ransomware = "No"
             if kev_res:
