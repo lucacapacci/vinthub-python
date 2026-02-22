@@ -13,6 +13,7 @@ class VintHub:
         self.base_kev = "https://lucacapacci.github.io/cisa_kev/data_single/{year}/{cve}.csv"
         self.base_poc = "https://raw.githubusercontent.com/lucacapacci/PoC-in-GitHub/refs/heads/main/{year}/{cve}.json"
         self.base_edb = "https://lucacapacci.github.io/exploitdb/data_single/{year}/{cve}.csv"
+        self.base_msf = "https://lucacapacci.github.io/metasploit/data_single/{year}/{cve}.json"
         self.base_cve_proj = "https://raw.githubusercontent.com/CVEProject/cvelistV5/refs/heads/main/cves/{year}/{prefix}/{cve}.json"
 
     def _capitalize(self, s):
@@ -48,11 +49,23 @@ class VintHub:
             if not nvd_req.ok: return {"VULN ID": cve_id, "error": "Not Found"}
             cve_data = nvd_req.json().get('cve', {})
 
-            epss_res = requests.get(self.base_epss.format(year=year, cve=cve_id)).text if requests.get(self.base_epss.format(year=year, cve=cve_id)).ok else ""
-            kev_res = requests.get(self.base_kev.format(year=year, cve=cve_id)).text if requests.get(self.base_kev.format(year=year, cve=cve_id)).ok else ""
-            poc_git = requests.get(self.base_poc.format(year=year, cve=cve_id)).json() if requests.get(self.base_poc.format(year=year, cve=cve_id)).ok else []
-            edb_res = requests.get(self.base_edb.format(year=year, cve=cve_id)).text if requests.get(self.base_edb.format(year=year, cve=cve_id)).ok else ""
-            proj = requests.get(self.base_cve_proj.format(year=year, prefix=prefix, cve=cve_id)).json() if requests.get(self.base_cve_proj.format(year=year, prefix=prefix, cve=cve_id)).ok else {}
+            epss_resp = requests.get(self.base_epss.format(year=year, cve=cve_id))
+            epss_res = epss_resp.text if epss_resp.ok else ""
+
+            kev_resp = requests.get(self.base_kev.format(year=year, cve=cve_id))
+            kev_res = kev_resp.text if kev_resp.ok else ""
+
+            poc_resp = requests.get(self.base_poc.format(year=year, cve=cve_id))
+            poc_git = poc_resp.json() if poc_resp.ok else []
+
+            edb_resp = requests.get(self.base_edb.format(year=year, cve=cve_id))
+            edb_res = edb_resp.text if edb_resp.ok else ""
+
+            msf_resp = requests.get(self.base_msf.format(year=year, cve=cve_id))
+            msf_res = msf_resp.json() if msf_resp.ok else []
+
+            proj_resp = requests.get(self.base_cve_proj.format(year=year, prefix=prefix, cve=cve_id))
+            proj = proj_resp.json() if proj_resp.ok else {}
 
             products = set()
             for node in cve_data.get('configurations', []):
@@ -75,6 +88,17 @@ class VintHub:
                 if len(lines) > 1:
                     edb_id = lines[1].split(',')[0]
                     poc_links.append(f"https://www.exploit-db.com/exploits/{edb_id}")
+
+            if msf_res:
+                try:
+                    msf_data = msf_res
+                    if isinstance(msf_data, list):
+                        for m in msf_data:
+                            if "path" in m:
+                                poc_links.append(m["path"])
+                except Exception as e:
+                    print(e)
+
             for ref in cve_data.get('references', []):
                 if "Exploit" in ref.get('tags', []):
                     ref['url'] = re.sub(r'^http://', 'https://', ref['url'])
@@ -92,6 +116,7 @@ class VintHub:
                             epss_val = f"{float(parts[1])*100:.3f}%"
                         break
 
+            # FIXED KEV LOGIC: Check row by row for CVE ID and return dateAdded or "No"
             kev_val = "No"
             ransomware = "No"
             if kev_res:
